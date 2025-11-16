@@ -1,0 +1,34 @@
+{
+  "report_date": "2025-11-16 17:22:42",
+  "data_sources": {
+    "311_complaints": {
+      "original_count": 19511,
+      "cleaned_count": 19434,
+      "removed_count": 77
+    },
+    "district_features": {
+      "district_count": 12
+    }
+  },
+  "data_quality": {
+    "311_complaints": {
+      "missing_coordinates": 76,
+      "missing_coordinates_pct": 0.39,
+      "duplicates": 0
+    },
+    "district_features": {
+      "missing_values": 0,
+      "completeness": 100.0
+    }
+  },
+  "issues_found": [
+    "311数据有76条缺失坐标记录（已移除）",
+    "311数据有1条异常坐标记录（已移除）",
+    "区域特征数据部分为估算值，需在报告中说明"
+  ],
+  "recommendations": [
+    "311数据清理完成，可直接使用",
+    "区域特征数据完整，但需说明估算部分",
+    "如果获取到真实数据，应替换估算值"
+  ]
+} 
