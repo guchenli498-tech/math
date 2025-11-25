@@ -38,12 +38,34 @@ def assign_district(lat, lon):
 
 # 读取311数据
 print("\n1. 读取311投诉数据...")
-rat_df = pd.read_csv('../data/external/311_rodent_complaints_manhattan.csv')
+# 尝试多个可能的路径
+possible_paths = [
+    '../data/external/311_rodent_complaints_manhattan.csv',
+    '../../data/external/311_rodent_complaints_manhattan.csv',
+    '../data/external/311_rodent_manhattan.csv'
+]
+
+rat_df = None
+for path in possible_paths:
+    try:
+        rat_df = pd.read_csv(path)
+        print(f"   ✓ 从 {path} 读取数据")
+        break
+    except FileNotFoundError:
+        continue
+
+if rat_df is None:
+    print("   ✗ 错误：找不到311投诉数据文件")
+    print("   请确保文件在以下位置之一：")
+    for path in possible_paths:
+        print(f"     - {path}")
+    exit(1)
 rat_df_clean = rat_df.dropna(subset=['latitude', 'longitude'])
 print(f"   ✓ 有效坐标记录: {len(rat_df_clean):,} 条")
 
 # 映射到区域
 print("\n2. 映射到区域（基于坐标范围）...")
+rat_df_clean = rat_df_clean.copy()  # 避免SettingWithCopyWarning
 rat_df_clean['DISTRICT'] = rat_df_clean.apply(
     lambda row: assign_district(row['latitude'], row['longitude']), 
     axis=1
@@ -61,7 +83,24 @@ for idx, row in district_counts.iterrows():
 
 # 更新特征矩阵
 print("\n3. 更新区域特征矩阵...")
-df_features = pd.read_csv('../data/features/district_features_enhanced.csv')
+# 尝试多个可能的路径
+possible_paths = [
+    '../data/features/district_features_enhanced.csv',
+    '../../data/features/district_features_enhanced.csv'
+]
+
+df_features = None
+for path in possible_paths:
+    try:
+        df_features = pd.read_csv(path)
+        print(f"   ✓ 从 {path} 读取数据")
+        break
+    except FileNotFoundError:
+        continue
+
+if df_features is None:
+    print("   ✗ 错误：找不到特征矩阵文件")
+    exit(1)
 df_features = df_features.merge(district_counts, left_on='district', right_on='DISTRICT', how='left')
 df_features['rodent_complaints'] = df_features['rodent_complaints'].fillna(0).astype(int)
 df_features = df_features.drop(columns=['DISTRICT'])

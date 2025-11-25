@@ -7,30 +7,58 @@ import geopandas as gpd
 from shapely import wkt
 from shapely.geometry import Point
 import numpy as np
+from pathlib import Path
 
 print("=" * 60)
 print("311投诉数据映射到DSNY区域")
 print("=" * 60)
 
+# 预定义路径
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+
 # ==================== 1. 读取DSNY区域数据 ====================
 print("\n1. 读取DSNY区域数据...")
 try:
-    districts_df = pd.read_csv('../data/raw/DSNY_Districts_20251026.csv')
+    possible_paths = [
+        PROJECT_ROOT / "data" / "raw" / "DSNY_Districts_20251026_clean.csv",
+        PROJECT_ROOT / "data" / "raw" / "DSNY_Districts_20251026.csv",
+        PROJECT_ROOT / "2025 CQU-MCM-ICM  Problems" / "Problems" / "2025_CQUICM_Problem_D_Data" / "DSNY_Districts_20251026.csv",
+    ]
+
+    districts_df = None
+    for path in possible_paths:
+        if path.exists():
+            districts_df = pd.read_csv(path)
+            print(f"   ✓ 从 {path} 读取数据")
+            break
+
+    if districts_df is None:
+        print("   ✗ 错误：找不到 DSNY 区域文件")
+        for path in possible_paths:
+            print(f"     - {path}")
+        exit(1)
     print(f"   ✓ 读取 {len(districts_df)} 行数据")
     
-    # 检查multipolygon列
-    if 'multipolygon' not in districts_df.columns:
-        print("   ✗ 错误：找不到 'multipolygon' 列")
+    # 确定几何列
+    geometry_col = None
+    if "WKT" in districts_df.columns:
+        geometry_col = "WKT"
+    elif "multipolygon" in districts_df.columns:
+        geometry_col = "multipolygon"
+
+    if geometry_col is None:
+        print("   ✗ 错误：找不到 WKT/multipolygon 列")
         print("   可用列：", list(districts_df.columns)[:10])
         exit(1)
-    
+
     # 筛选曼哈顿区域
     manhattan_districts = districts_df[districts_df['DISTRICT'].str.startswith('MN', na=False)].copy()
     print(f"   ✓ 找到 {len(manhattan_districts)} 个曼哈顿区域")
     
     # 检查multipolygon数据
     print("\n   检查multipolygon数据...")
-    valid_geom = manhattan_districts['multipolygon'].notna()
+    valid_geom = manhattan_districts[geometry_col].notna()
     print(f"     有效几何数据: {valid_geom.sum()} 个区域")
     
     if valid_geom.sum() == 0:
@@ -53,18 +81,18 @@ try:
         
         # 将WKT字符串转换为几何对象
         try:
-            manhattan_districts_valid['geometry'] = manhattan_districts_valid['multipolygon'].apply(
+            manhattan_districts_valid['geometry'] = manhattan_districts_valid[geometry_col].apply(
                 lambda x: wkt.loads(x) if pd.notna(x) and isinstance(x, str) else None
             )
             print(f"   ✓ 成功转换 {len(manhattan_districts_valid)} 个区域的几何数据")
         except Exception as e:
             print(f"   ✗ 错误：无法解析WKT格式: {e}")
             print("   尝试其他方法...")
-            
+
             # 尝试直接读取（可能已经是几何对象）
             try:
-                manhattan_districts_valid['geometry'] = manhattan_districts_valid['multipolygon']
-            except:
+                manhattan_districts_valid['geometry'] = manhattan_districts_valid[geometry_col]
+            except Exception:
                 print("   ✗ 无法处理几何数据")
                 exit(1)
         
@@ -89,7 +117,26 @@ except Exception as e:
 # ==================== 2. 读取311投诉数据 ====================
 print("\n2. 读取311投诉数据...")
 try:
-    rat_df = pd.read_csv('../data/external/311_rodent_complaints_manhattan.csv')
+    # 尝试多个可能的路径
+    possible_paths = [
+        os.path.join(project_root, 'data/external/311_rodent_complaints_manhattan.csv'),
+        os.path.join(project_root, 'data/external/311_rodent_manhattan.csv'),
+        '../data/external/311_rodent_complaints_manhattan.csv',
+        '../../data/external/311_rodent_complaints_manhattan.csv',
+    ]
+    
+    rat_df = None
+    for path in possible_paths:
+        try:
+            rat_df = pd.read_csv(path)
+            print(f"   ✓ 从 {path} 读取数据")
+            break
+        except FileNotFoundError:
+            continue
+    
+    if rat_df is None:
+        print("   ✗ 错误：找不到311投诉数据文件")
+        exit(1)
     print(f"   ✓ 读取 {len(rat_df):,} 条投诉记录")
     
     # 清洗：去掉没有经纬度的数据
@@ -160,7 +207,23 @@ except Exception as e:
 print("\n4. 更新区域特征矩阵...")
 try:
     # 读取现有的特征矩阵
-    df_features = pd.read_csv('../data/features/district_features_enhanced.csv')
+    possible_paths = [
+        os.path.join(project_root, 'data/features/district_features_enhanced.csv'),
+        '../data/features/district_features_enhanced.csv',
+    ]
+    
+    df_features = None
+    for path in possible_paths:
+        try:
+            df_features = pd.read_csv(path)
+            print(f"   ✓ 从 {path} 读取数据")
+            break
+        except FileNotFoundError:
+            continue
+    
+    if df_features is None:
+        print("   ✗ 错误：找不到特征矩阵文件")
+        exit(1)
     print(f"   ✓ 读取现有特征矩阵: {len(df_features)} 个区域")
     
     # 合并投诉数据
@@ -186,12 +249,12 @@ try:
         df_features = df_features.drop(columns=['DISTRICT'])
     
     # 保存更新后的特征矩阵
-    output_file = '../data/features/district_features_with_mapped_complaints.csv'
+    output_file = os.path.join(project_root, 'data/features/district_features_with_mapped_complaints.csv')
     df_features.to_csv(output_file, index=False, encoding='utf-8-sig')
     print(f"   ✓ 已保存到: {output_file}")
     
     # 同时更新cleaned版本
-    output_file_cleaned = '../data/processed/district_features_cleaned.csv'
+    output_file_cleaned = os.path.join(project_root, 'data/processed/district_features_cleaned.csv')
     df_features.to_csv(output_file_cleaned, index=False, encoding='utf-8-sig')
     print(f"   ✓ 已更新清理版本: {output_file_cleaned}")
     
@@ -209,7 +272,7 @@ except Exception as e:
 print("\n5. 保存映射结果...")
 try:
     # 保存完整的映射数据（可选，用于后续分析）
-    output_mapped = '../data/processed/311_complaints_mapped_to_districts.csv'
+    output_mapped = os.path.join(project_root, 'data/processed/311_complaints_mapped_to_districts.csv')
     joined_data_save = joined_data[['unique_key', 'created_date', 'complaint_type', 
                                      'latitude', 'longitude', 'DISTRICT', 'DISTRICTCODE']].copy()
     joined_data_save.to_csv(output_mapped, index=False, encoding='utf-8-sig')
