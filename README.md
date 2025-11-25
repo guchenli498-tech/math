@@ -16,13 +16,12 @@
 │   ├── maps/              # 地图文件
 │   └── README.md          # 数据说明文档
 │
-├── scripts/                # Python脚本
-│   ├── download_311_data.py          # 下载311投诉数据
-│   ├── preprocess_data.py            # 数据预处理
-│   ├── estimate_missing_data.py      # 估算缺失数据
-│   ├── analyze_and_clean_data.py    # 数据分析和清理
-│   ├── map_complaints_to_districts.py # 空间映射（需要geopandas）
-│   └── map_complaints_simple.py      # 简化版映射（无需geopandas）
+├── scripts/                # Python脚本（按功能拆分）
+│   ├── pipelines/          # 数据下载、预处理、清洗
+│   ├── spatial/            # WKT 修复、空间映射
+│   ├── models/             # Task 1-5 的建模代码
+│   ├── tooling/            # 依赖安装、脚本说明
+│   └── 快速数据获取脚本.py      # 历史辅助脚本（备查）
 │
 ├── docs/                   # 文档文件夹
 │   └── ...
@@ -41,45 +40,49 @@ pip install pandas numpy requests
 
 **空间分析（推荐）**：
 ```bash
-# Windows用户推荐使用conda
+# Windows 用户推荐使用 conda
 conda install -c conda-forge geopandas shapely
 
-# 或使用pip（可能需要先安装GDAL）
+# 或使用 pip（可能需要提前装 GDAL）
 pip install geopandas shapely
 ```
 
-如果geopandas安装困难，可以使用简化版脚本（`map_complaints_simple.py`）
+若暂时无法安装 geopandas，可使用简化版脚本（`scripts/spatial/map_complaints_simple.py`）。
 
-### 2. 数据收集
+### 2. 数据流水线
 
 ```bash
-# 下载311老鼠投诉数据
-python scripts/download_311_data.py
+# 1) 下载 311 投诉数据
+python scripts/pipelines/download_311_data.py
 
-# 预处理数据，创建特征矩阵
-python scripts/preprocess_data.py
+# 2) 预处理 + 估算缺失特征
+python scripts/pipelines/preprocess_data.py
+python scripts/pipelines/estimate_missing_data.py
 
-# 估算缺失数据（收入、建筑等）
-python scripts/estimate_missing_data.py
+# 3) 数据分析 + 清洗报告
+python scripts/pipelines/analyze_and_clean_data.py
 ```
 
 ### 3. 空间映射（关键步骤）
 
-**方法1：使用geopandas（精确）**：
+**方法1：使用 geopandas（精确）**
 ```bash
-python scripts/map_complaints_to_districts.py
+python scripts/spatial/fix_dsny_to_pickle.py      # 清洗 WKT 并生成 Pickle
+python scripts/spatial/map_complaints_to_districts.py
 ```
 
-**方法2：简化版（近似）**：
+**方法2：简化版（无需 geopandas）**
 ```bash
-python scripts/map_complaints_simple.py
+python scripts/spatial/map_complaints_simple.py
 ```
 
-### 4. 数据分析与清理
+### 4. 建模脚本入口
 
-```bash
-python scripts/analyze_and_clean_data.py
-```
+- `python scripts/models/model1_robustness_analysis.py`：Task(3) Monte Carlo 鲁棒性。
+- `python scripts/models/rat_dynamics_model.py`：Task(4) 鼠群动力学 / bins 风险评估。
+- `python scripts/models/model3_npv_analysis.py`：Task(5) 垃圾桶政策 NPV。
+
+> 以上脚本默认读取 `data/features/` 或 `data/processed/`，可按需调整参数/路径。
 
 ### 5. 使用清理后的数据
 
@@ -97,12 +100,14 @@ python scripts/analyze_and_clean_data.py
 - **区域特征数据**: 12个曼哈顿区域（MN01-MN12）
 - **数据完整度**: 100%
 
-### 关键改进
+### 关键改进 / 最新进展
 
-✅ **空间映射已完成**：311投诉数据已精确映射到MN01-MN12区域
-- 使用geopandas进行空间连接（Spatial Join）
-- 将经纬度坐标映射到DSNY区域边界
-- 更新了区域特征矩阵，使用真实投诉数据替代估算值
+- ✅ **空间映射链路**：`scripts/spatial` 包含 WKT 修复 + 精确映射 + 简化版备选。
+- ✅ **数据流水线**：`scripts/pipelines` 覆盖下载 → 预处理 → 估算 → 清洗 的端到端脚本。
+- ✅ **建模框架**：
+  - Model 1（鲁棒性）：Monte Carlo 仿真车辆故障 / 垃圾激增。
+  - Model 2（鼠群动力学）：`scipy.integrate.odeint` 求解，输出风险指标。
+  - Model 3（NPV）：调用 Model 2 结果评估垃圾桶政策的经济性。
 
 ### 数据来源
 
@@ -113,19 +118,11 @@ python scripts/analyze_and_clean_data.py
 ## 任务分工
 
 ### 数据阶段（已完成）✅
-- ✅ 数据收集
-- ✅ 数据预处理
-- ✅ **空间映射**（经纬度→区域）
-- ✅ 数据分析
-- ✅ 数据清理
-- ✅ 生成报告
+- 数据收集 / 预处理 / 空间映射 / 清洗 / 报告生成
 
-### 建模阶段（待进行）⏳
-- ⏳ 任务1：资源分配策略
-- ⏳ 任务2：效率与公平性评估
-- ⏳ 任务3：中断场景分析
-- ⏳ 任务4：老鼠问题分析
-- ⏳ 任务5：垃圾桶政策影响
+### 建模阶段（进行中）⚙️
+- 已完成 Model 1-3 代码框架，可直接调整参数或接入新特征
+- 后续重点：完善 Task(1)(2) 的动态调度与公平性度量
 
 ## 注意事项
 
@@ -146,4 +143,4 @@ python scripts/analyze_and_clean_data.py
 
 ---
 
-最后更新：2025-11-16
+最后更新：2025-11-25

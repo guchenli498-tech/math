@@ -35,20 +35,34 @@
 │   └── maps/                         # 地图文件
 │       └── manhattan_districts_map.png
 │
-├── scripts/                          # Python脚本
-│   ├── README.md                     # 脚本说明
+├── scripts/                          # Python脚本总目录
+│   ├── pipelines/                    # 数据下载、预处理、清洗
+│   │   ├── download_311_data.py
+│   │   ├── download_census_data.py
+│   │   ├── collect_missing_data.py
+│   │   ├── preprocess_data.py
+│   │   ├── estimate_missing_data.py
+│   │   ├── analyze_data.py / analyze_data_fast.py (辅助)
+│   │   └── analyze_and_clean_data.py
 │   │
-│   ├── 数据收集/
-│   │   ├── download_311_data.py      # 下载311投诉数据
-│   │   ├── download_census_data.py   # 下载人口普查数据
-│   │   └── collect_missing_data.py   # 收集缺失数据
+│   ├── spatial/                      # DSNY WKT 修复与映射
+│   │   ├── fix_dsny_wkt.py
+│   │   ├── fix_dsny_to_pickle.py
+│   │   ├── map_complaints_to_districts.py
+│   │   ├── map_complaints_simple.py
+│   │   └── SPATIAL_MAPPING_README.md
 │   │
-│   ├── 数据预处理/
-│   │   ├── preprocess_data.py        # 创建特征矩阵
-│   │   └── estimate_missing_data.py  # 估算缺失数据
+│   ├── models/                       # Task(3)(4)(5) 建模脚本
+│   │   ├── model1_robustness_analysis.py
+│   │   ├── rat_dynamics_model.py
+│   │   └── model3_npv_analysis.py
 │   │
-│   └── 数据分析/
-│       └── analyze_and_clean_data.py # 分析、清理、生成报告
+│   ├── tooling/                      # 依赖与脚本说明
+│   │   ├── requirements.txt
+│   │   ├── install_dependencies.py
+│   │   └── README.md
+│   │
+│   └── 快速数据获取脚本.py               # 旧版工具（备查）
 │
 ├── docs/                             # 文档文件夹
 │   ├── README.md                     # 文档说明
@@ -76,10 +90,11 @@
 - **maps/**: 地图和可视化文件
 
 ### scripts/ - 脚本文件夹
-所有Python脚本按功能分类：
-- 数据收集：下载外部数据
-- 数据预处理：创建特征矩阵
-- 数据分析：质量分析和清理
+按功能分成四大区：
+- **pipelines/**：数据下载、预处理、补全、清洗的流水线脚本。
+- **spatial/**：WKT 修复与 311 投诉 → DSNY 区域映射。
+- **models/**：Model1 (鲁棒性)、Model2 (鼠群动力学)、Model3 (NPV)。
+- **tooling/**：依赖安装、脚本说明文档。
 
 ### docs/ - 文档文件夹
 项目相关的所有文档和指南

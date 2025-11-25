@@ -1,73 +1,42 @@
-# Scripts 文件夹说明
+# Scripts 目录说明
 
-本文件夹包含所有Python脚本，用于数据收集、预处理、分析和清理。
+脚本分布在四个子文件夹内，用于支撑数据流水线、空间映射与建模分析。
 
-## 脚本列表
+## 1. pipelines/  —— 数据流水线
 
-### 数据收集脚本
+- `download_311_data.py`：抓取 311 鼠患投诉数据。
+- `download_census_data.py`：尝试通过 API 获取普查数据。
+- `collect_missing_data.py`：补齐收入、建筑等缺失字段。
+- `preprocess_data.py`：合并 DSNY + 311，构建基础特征矩阵。
+- `estimate_missing_data.py`：用估算逻辑增加收入/贫困/建筑字段。
+- `analyze_and_clean_data.py`：质量检查、清洗、生成报告。
+- `analyze_data.py` / `analyze_data_fast.py`：快速探索版（保留以备查）。
 
-1. **download_311_data.py**
-   - 功能：从NYC Open Data下载311老鼠投诉数据
-   - 输出：`data/external/311_rodent_complaints_manhattan.csv`
-   - 使用：`python scripts/download_311_data.py`
+> 推荐顺序：download → preprocess → estimate → analyze_and_clean。
 
-2. **download_census_data.py**
-   - 功能：下载人口普查数据（可选）
-   - 输出：`data/external/census_nta_manhattan.csv`
-   - 使用：`python scripts/download_census_data.py`
+## 2. spatial/ —— WKT 修复与投诉映射
 
-3. **collect_missing_data.py**
-   - 功能：尝试收集缺失数据（收入、建筑等）
-   - 使用：`python scripts/collect_missing_data.py`
+- `fix_dsny_wkt.py`：重新拼接被拆散的 WKT 字段。
+- `fix_dsny_to_pickle.py`：将 DSNY CSV 转存为 Pickle，避免再次被切分。
+- `map_complaints_to_districts.py`：使用 GeoPandas 做精准空间映射。
+- `map_complaints_simple.py`：无需 GeoPandas 的近似映射方案。
+- `SPATIAL_MAPPING_README.md`：空间映射的环境依赖与操作说明。
 
-### 数据预处理脚本
+## 3. models/ —— 任务 3/4/5 的建模脚本
 
-4. **preprocess_data.py**
-   - 功能：提取DSNY区域数据，创建区域特征矩阵
-   - 输入：原始DSNY数据、311投诉数据
-   - 输出：`data/features/district_features.csv`
-   - 使用：`python scripts/preprocess_data.py`
+- `model1_robustness_analysis.py`：车辆故障 + 垃圾激增的 Monte Carlo 鲁棒性。
+- `rat_dynamics_model.py`：鼠群动力学微分方程（Model 2）。
+- `model3_npv_analysis.py`：垃圾桶政策的 NPV 评估（引用 Model 2 输出）。
 
-5. **estimate_missing_data.py**
-   - 功能：估算缺失数据（收入、贫困率、建筑数据）
-   - 输入：`data/features/district_features.csv`
-   - 输出：`data/features/district_features_enhanced.csv`
-   - 使用：`python scripts/estimate_missing_data.py`
+## 4. tooling/ —— 依赖与指南（本文件夹）
 
-### 数据分析脚本
+- `requirements.txt`：项目依赖清单。
+- `install_dependencies.py`：批量安装工具脚本。
+- `README.md`：当前说明文档。
 
-6. **analyze_and_clean_data.py**
-   - 功能：分析数据质量，清理数据，生成报告
-   - 输入：所有数据文件
-   - 输出：
-     - `data/processed/311_rodent_complaints_cleaned.csv`
-     - `data/processed/district_features_cleaned.csv`
-     - `data/processed/data_quality_report.json`
-     - `data/processed/DATA_ANALYSIS_REPORT.md`
-   - 使用：`python scripts/analyze_and_clean_data.py`
+## 通用注意事项
 
-### 辅助脚本
-
-7. **analyze_data.py** / **analyze_data_fast.py**
-   - 功能：快速分析数据结构（开发用）
-   - 状态：已弃用，功能已整合到主脚本
-
-8. **快速数据获取脚本.py**
-   - 功能：数据获取工具集合（开发用）
-   - 状态：已弃用，功能已拆分到各专门脚本
-
-## 执行顺序
-
-建议按以下顺序执行脚本：
-
-1. `download_311_data.py` - 下载311数据
-2. `preprocess_data.py` - 创建基础特征矩阵
-3. `estimate_missing_data.py` - 补充估算数据
-4. `analyze_and_clean_data.py` - 分析和清理
-
-## 注意事项
-
-- 所有脚本输出到 `data/` 文件夹的相应子文件夹
-- 脚本会创建必要的文件夹（如果不存在）
-- 部分脚本需要网络连接（下载数据）
+- 所有脚本默认在项目根目录执行，内部路径以 `../data/` 访问数据。
+- 输出会写入 `data/` 下相应子目录，请确认磁盘有写权限。
+- 若使用 Conda 环境，建议 `conda activate mcm` 后再运行脚本。
 
