@@ -76,13 +76,17 @@ python scripts/spatial/map_complaints_to_districts.py
 python scripts/spatial/map_complaints_simple.py
 ```
 
-### 4. 建模脚本入口
+### 4. 建模脚本入口（Task 1-5）
 
-- `python scripts/models/model1_robustness_analysis.py`：Task(3) Monte Carlo 鲁棒性。
-- `python scripts/models/rat_dynamics_model.py`：Task(4) 鼠群动力学 / bins 风险评估。
-- `python scripts/models/model3_npv_analysis.py`：Task(5) 垃圾桶政策 NPV。
+| 任务 | 主要脚本 | 说明 |
+|------|---------|------|
+| Task 1 | `scripts/models/task1_frequency_optimizer.py` <br> `scripts/models/task1_frequency_optimizer.py --feature-file ...` | 枚举 2×/3× 频次、计算卡车日，并输出跨区共享排班。 |
+| Task 2 | `scripts/models/task2_equity_setup.py` <br> `scripts/models/task2_efficiency_equity_model.py` <br> `scripts/models/task2_tradeoff_analysis.py` | 生成公平性目标、求解效率+公平线性模型，并输出效率-公平权衡曲线。 |
+| Task 3 | `scripts/models/task3_scenario_config.py` <br> `scripts/models/task3_robust_simulation.py` <br> `scripts/models/task3_resilience_strategy.py` | 定义车辆故障 / 垃圾激增 / 天气场景，执行蒙特卡洛仿真并比较弹性策略。 |
+| Task 4 | `scripts/models/task4_exposure_time.py` <br> `scripts/models/task4_rat_dynamics_analysis.py` <br> `scripts/models/task4_strategy_recommendation.py` | 估算垃圾暴露时间 → 仿真鼠患动力学 → 得到 AM/PM + Bins 区域建议。 |
+| Task 5 | `scripts/models/task5_bins_policy_analysis.py` <br> `scripts/models/task5_npv_analysis.py` <br> `scripts/models/task5_policy_summary.py` | 量化 Bins 对车队/鼠患的影响，计算 NPV + 敏感性，并输出政策总结。 |
 
-> 以上脚本默认读取 `data/features/` 或 `data/processed/`，可按需调整参数/路径。
+所有脚本默认读取 `data/features/` 或 `outputs/` 下的中间结果，可按需修改参数。
 
 ### 5. 使用清理后的数据
 
@@ -102,12 +106,14 @@ python scripts/spatial/map_complaints_simple.py
 
 ### 关键改进 / 最新进展
 
-- ✅ **空间映射链路**：`scripts/spatial` 包含 WKT 修复 + 精确映射 + 简化版备选。
-- ✅ **数据流水线**：`scripts/pipelines` 覆盖下载 → 预处理 → 估算 → 清洗 的端到端脚本。
-- ✅ **建模框架**：
-  - Model 1（鲁棒性）：Monte Carlo 仿真车辆故障 / 垃圾激增。
-  - Model 2（鼠群动力学）：`scipy.integrate.odeint` 求解，输出风险指标。
-  - Model 3（NPV）：调用 Model 2 结果评估垃圾桶政策的经济性。
+- ✅ **空间映射链路**：`scripts/spatial` 提供 WKT 修复 + 精准映射 + 简化版备选。
+- ✅ **数据流水线**：`scripts/pipelines` 覆盖下载 → 预处理 → 估算 → 清洗的端到端流程。
+- ✅ **五大任务全量实现**：
+  - Task 1：频次优化 + 跨区共享排班（输出 `outputs/figures/task1_*.png`）。
+  - Task 2：公平性指标、线性规划解和效率-公平帕累托曲线。
+  - Task 3：车辆故障/垃圾激增/恶劣天气的蒙特卡洛仿真与弹性策略。
+  - Task 4：暴露时间估计、鼠患 ODE 仿真、AM/PM + Bins 建议。
+  - Task 5：Bins 政策下的车队与鼠患影响、NPV + 敏感性分析、政策总结。
 
 ### 数据来源
 
@@ -120,9 +126,8 @@ python scripts/spatial/map_complaints_simple.py
 ### 数据阶段（已完成）✅
 - 数据收集 / 预处理 / 空间映射 / 清洗 / 报告生成
 
-### 建模阶段（进行中）⚙️
-- 已完成 Model 1-3 代码框架，可直接调整参数或接入新特征
-- 后续重点：完善 Task(1)(2) 的动态调度与公平性度量
+### 建模阶段（已完成）✅
+- Task 1-5 全部脚本、仿真结果与可视化已同步到 `outputs/`，可直接引用至论文。
 
 ## 注意事项
 
@@ -143,4 +148,4 @@ python scripts/spatial/map_complaints_simple.py
 
 ---
 
-最后更新：2025-11-25
+最后更新：2025-11-26

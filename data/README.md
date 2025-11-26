@@ -50,38 +50,17 @@ data/
 
 ---
 
-### features/ - 特征矩阵
+### features/ - 特征矩阵（建模输入）
 
-**district_features.csv**
-- 来源：基于raw和external数据生成
-- 内容：12个曼哈顿区域的特征矩阵（基础版本）
+| 文件 | 说明 | 用途 |
+|------|------|------|
+| `district_features.csv` | 原始特征矩阵（基础人口/垃圾量） | Task 1 的初始估计 |
+| `district_features_enhanced.csv` | 增强版特征（收入、贫困率、建筑估算） | Task 2/5 的公平性与Bins数据 |
+| `district_demand_reestimated.csv` | 基于鼠患投诉 + 建筑权重重新分配 4.8M lbs/day 的需求、2×/3× 卡车数 | Task 1 频次枚举 & Task 3 场景基线 |
+| `district_equity_targets.csv` | 由 `task2_equity_setup.py` 生成的目标频率、目标清运量、公平权重 | Task 2 线性规划输入 |
+| `district_exposure_estimates.csv` | 由 `task4_exposure_time.py` 计算的 AM/PM 暴露时间、Bins 覆盖、Gi(t) | Task 4 鼠患动力学模型 |
 
-**district_features_enhanced.csv**
-- 来源：基于district_features.csv + 估算数据生成
-- 内容：增强版特征矩阵，包含收入、贫困率、建筑数据
-- 新增列：
-  - median_household_income: 收入中位数（估算）
-  - poverty_rate: 贫困率（估算）
-  - estimated_households: 估算户数
-  - estimated_total_buildings: 估算总建筑数
-  - buildings_1to9_units_count: 1-9单元建筑数量（估算）
-  - households_1to9_units: 1-9单元建筑中的家庭数（估算）
-- 注意：新增数据为估算值，需在报告中说明
-- 列：
-  - district: 区域代码（MN01-MN12）
-  - district_code: 区域数字代码（101-112）
-  - area_sqft: 面积（平方英尺，估算值）
-  - area_acre: 面积（英亩）
-  - estimated_rodent_complaints: 估算的老鼠投诉数
-  - estimated_population: 估算人口
-  - daily_waste_lbs: 每日垃圾量（磅）
-  - daily_waste_tons: 每日垃圾量（吨）
-  - weekly_waste_tons: 每周垃圾量（吨）
-  - trucks_needed_2x: 每周2次收集需要的卡车数
-  - trucks_needed_3x: 每周3次收集需要的卡车数
-  - current_pickups_per_week: 当前收集频率（假设为2）
-- 用途：所有5个任务的基础数据
-- 注意：部分数据为估算值，在报告中需说明
+> 以上文件均为脚本自动生成，若重新运行脚本请备份必要版本。
 
 ---
 
@@ -113,17 +92,11 @@ data/
 
 ## 数据使用说明
 
-### 建模时使用
-主要使用 `features/district_features.csv` 作为基础数据
+- Task 1/3 主要依赖 `features/district_demand_reestimated.csv` 与场景文件。
+- Task 2 使用 `district_equity_targets.csv` 中的目标服务量与公平权重。
+- Task 4 的鼠患模型读取 `district_exposure_estimates.csv`；Bins 政策评估使用 `outputs/task4_*.csv` 衍生的结果。
 
-### 分析时使用
-- 老鼠问题分析：使用 `external/311_rodent_complaints_manhattan.csv`
-- 地理分析：使用 `raw/DSNY_Districts_20251026.csv`
-
-### 数据更新
-- 如果获取到新数据，按类型放入对应文件夹
-- 更新特征矩阵后，替换 `features/district_features.csv`
-- 更新此README说明
+如需重新生成，请先运行相关脚本，再在此 README 中更新说明。
 
 ---
 
@@ -135,5 +108,5 @@ data/
 
 ---
 
-最后更新：2025年
+最后更新：2025-11-26
 
